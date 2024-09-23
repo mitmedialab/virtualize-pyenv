@@ -21,4 +21,5 @@ export PATH="$PYENV_ROOT/bin:$PATH"
 curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer > "$VIRTUALIZE_PYTHON_DIR"/pyenv-installer
 bash "$VIRTUALIZE_PYTHON_DIR"/pyenv-installer
 pyenv install $VIRTUALIZE_PYTHON_VERSION
-(cd $VIRTUALIZE_PYTHON_ROOT/..; pyenv local $VIRTUALIZE_PYTHON_VERSION)
+# set the initial version for pyenv
+(cd $VIRTUALIZE_PYTHON_DIR/..; pyenv local $VIRTUALIZE_PYTHON_VERSION)
