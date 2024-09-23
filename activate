@@ -1,0 +1,80 @@
+#https://unix.stackexchange.com/a/153061
+VIRTUALIZE_SOURCED_NAME="${_:-$BASH_SOURCE}"  # must do this first because of $_ ambiguity
+
+if [ "${BASH_SOURCE-}" = "$0" ]; then
+    echo "You must source this script: \$ source $0" >&2
+    exit 33
+fi
+
+if [[ $VIRTUALIZE_ROOT && ! $VIRTUALIZE_ACTIVATING ]]; then
+    echo "virtualizer is active, not activating" $VIRTUALIZE_SOURCED_NAME
+    unset VIRTUALIZE_SOURCED_NAME
+    return
+fi
+
+if [[ $VIRTUALIZE_PYENV_DIR ]]; then
+    echo "This shell is already virtualized for $VIRTUALIZE_PYENV_DIR, type 'unactivate' to undo"
+    return
+fi
+
+VIRTUALIZE_PYENV_DIR=$( cd -- "$( dirname -- "${VIRTUALIZE_SOURCED_NAME}" )" &> /dev/null && pwd )
+
+VIRTUALIZE_PYENV_ORIG_PYENV_ROOT="$PYENV_ROOT"
+VIRTUALIZE_PYENV_ORIG_PATH="$PATH"
+export PYENV_ROOT="$VIRTUALIZE_PYENV_DIR/pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+function unactivate_pyenv() {
+    if [[ $VIRTUALIZE_PYENV_ORIG_PYENV_ROOT ]]; then
+        PYENV_ROOT="$VIRTUALIZE_PYENV_ORIG_PYENV_ROOT"
+    else
+        unset PYENV_ROOT
+    fi
+    PATH="$VIRTUALIZE_PYENV_ORIG_PATH"
+    unset VIRTUALIZE_PYENV_ORIG_PYENV_ROOT
+    unset VIRTUALIZE_PYENV_ORIG_PATH
+    unset VIRTUALIZE_SOURCED_NAME
+    unset VIRTUALIZE_PYENV_INSTALL_DIR
+    unset VIRTUALIZE_PYENV_DIR
+}
+
+# stop here if called on behalf of virtualize
+if [[ $VIRTUALIZE_ACTIVATING ]]; then
+    # let virtualized deal with customizing the prompt
+    return
+fi
+
+###
+### standalone mode only from here on
+###
+
+VIRTUALIZE_ROOT=$VIRTUALIZE_PYENV_DIR  # prevents autoactivating
+
+function unactivate() {
+    local virtualize_pyenv_dir="$VIRTUALIZE_PYENV_DIR"
+    unactivate_pyenv
+    unset -f unactivate_pyenv
+    PS1="$VIRTUALIZE_PYENV_ORIG_PS1"
+    unset VIRTUALIZE_PYENV_ORIG_PS1
+    unset VIRTUALIZE_PYENV_ACTIVE_VERSION
+    unset VIRTUALIZE_PYENV_DISPLAY
+    unset VIRTUALIZE_ROOT
+    unset -f unactivate
+    echo "unactivated $virtualize_pyenv_dir"
+}
+
+#VIRTUALIZE_PYENV_ORIG_PS1="$PS1"
+VIRTUALIZE_PYENV_ACTIVE_VERSION=$( $PYENV_ROOT/bin/pyenv version 2>&1 | head -1 | cut -d" " -f2 )
+VIRTUALIZE_PYENV_DISPLAY="$(echo $VIRTUALIZE_PYENV_DIR | sed 's%^$HOME/%%' | sed 's/\//·/g') $VIRTUALIZE_PYENV_ACTIVE_VERSION"
+if [[ $ZSH_VERSION ]]; then
+   PS1="[$VIRTUALIZE_PYENV_DISPLAY]$PS1"
+else  # for bash (and others?)
+   PS1="[$VIRTUALIZE_PYENV_DISPLAY]\n$PS1"
+fi
+
+echo "pyenv activated for $VIRTUALIZE_PYENV_DIR"
+echo "type 'unactivate' to undo"
+
+
+

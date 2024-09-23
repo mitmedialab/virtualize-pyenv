@@ -1,0 +1,9 @@
+*~
+.DS_Store
+/.cache
+/*.log
+.env
+.env.*
+/pyenv
+/pyenv-installer
+/.python-version
