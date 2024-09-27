@@ -23,7 +23,7 @@ VIRTUALIZE_PYENV_ORIG_PYENV_ROOT="$PYENV_ROOT"
 VIRTUALIZE_PYENV_ORIG_PATH="$PATH"
 export PYENV_ROOT="$VIRTUALIZE_PYENV_DIR/pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+eval "$(pyenv init - --no-rehash)"
 
 function unactivate_pyenv() {
     if [[ $VIRTUALIZE_PYENV_ORIG_PYENV_ROOT ]]; then
